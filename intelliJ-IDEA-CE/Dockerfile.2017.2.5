@@ -1,0 +1,31 @@
+FROM alpine:latest
+
+ARG APPLICATION=idea-IC-172.4343.14
+ARG DOWNLOAD_URL=https://download.jetbrains.com/idea/ideaIC-2017.2.5.tar.gz
+
+ARG INSTALL_DIRECTORY_PREFIX=/opt
+ARG DESKTOP_ENTRY_PREFIX=/usr/share/applications/${APPLICATION}
+
+ENV INSTALL_DIRECTORY=${INSTALL_DIRECTORY_PREFIX}/${APPLICATION} \
+    DESKTOP_ENTRY=${DESKTOP_ENTRY_PREFIX}/atom.desktop
+
+## Add application
+RUN mkdir -p $INSTALL_DIRECTORY_PREFIX \
+    && apk add --no-cache --virtual .download-deps wget ca-certificates \
+    && wget -nv -O intelliJ.tar.gz $DOWNLOAD_URL \
+    && tar xfz intelliJ.tar.gz -C $INSTALL_DIRECTORY_PREFIX \
+    && rm -f intelliJ.tar.gz \
+    && apk del .download-deps
+
+## Add desktop entry
+RUN mkdir -p $DESKTOP_ENTRY_PREFIX \
+    && { echo "[Desktop Entry]" \
+         && echo "Type=Application" \
+         && echo "Exec=${INSTALL_DIRECTORY}/bin/idea.sh" \
+         && echo "Name=${APPLICATION}" \
+         && echo "Icon=${INSTALL_DIRECTORY}/bin/idea.png"; \
+       } > $DESKTOP_ENTRY
+
+VOLUME ["$INSTALL_DIRECTORY", "$DESKTOP_ENTRY_PREFIX"]
+
+CMD ["true"]
