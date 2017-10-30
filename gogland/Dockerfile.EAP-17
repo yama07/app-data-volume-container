@@ -1,0 +1,31 @@
+FROM alpine:latest
+
+ARG APPLICATION=Gogland-173.3415.23
+ARG DOWNLOAD_URL=https://download.jetbrains.com/go/gogland-173.3415.23.tar.gz
+
+ARG INSTALL_DIRECTORY_PREFIX=/opt
+ARG DESKTOP_ENTRY_PREFIX=/usr/share/applications/${APPLICATION}
+
+ENV INSTALL_DIRECTORY=${INSTALL_DIRECTORY_PREFIX}/${APPLICATION} \
+    DESKTOP_ENTRY=${DESKTOP_ENTRY_PREFIX}/gogland.desktop
+
+## Add application
+RUN mkdir -p $INSTALL_DIRECTORY_PREFIX \
+    && apk add --no-cache --virtual .download-deps wget ca-certificates \
+    && wget -nv -O gogland.tar.gz $DOWNLOAD_URL \
+    && tar xfz gogland.tar.gz -C $INSTALL_DIRECTORY_PREFIX \
+    && rm -f gogland.tar.gz \
+    && apk del .download-deps
+
+## Add desktop entry
+RUN mkdir -p $DESKTOP_ENTRY_PREFIX \
+    && { echo "[Desktop Entry]" \
+         && echo "Type=Application" \
+         && echo "Exec=${INSTALL_DIRECTORY}/bin/gogland.sh" \
+         && echo "Name=${APPLICATION}" \
+         && echo "Icon=${INSTALL_DIRECTORY}/bin/gogland.png"; \
+       } > $DESKTOP_ENTRY
+
+VOLUME ["$INSTALL_DIRECTORY", "$DESKTOP_ENTRY_PREFIX"]
+
+CMD ["true"]
